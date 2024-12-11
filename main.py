@@ -4,11 +4,14 @@ from car import Car
 from car_controller import CarController
 from gui import CarSimulatorGUI
 
+# 속도 관련 상수
+SPEED_LIMIT = 120  #  과속 기준 속도 (km/h)
+AUTO_LOCK_SPEED = 30  # 자동 잠금이 작동하는 속도 (km/h)
 
 # 경고 메시지를 출력하는 함수
 def exceed_speed_limit(car_controller):
-    if car_controller.get_speed()>120:
-        print("경고: 차량 속도가 120km/h를 초과했습니다.")  # 과속 경고 메시지 출력
+    if car_controller.get_speed() > SPEED_LIMIT:
+        print(f"경고: 차량 속도가 {SPEED_LIMIT}km/h를 초과했습니다.")  # 과속 경고 메시지 출력
         return True
     else:
         return False
@@ -48,10 +51,10 @@ def execute_command_callback(command, car_controller):
                 warn_drive_while_open()  # 경고 메시지 출력
             
             car_controller.accelerate()  # 속도 +10
-            if car_controller.get_speed() >= 120:
+            if car_controller.get_speed() >= SPEED_LIMIT:
                 exceed_speed_limit(car_controller)
 
-            if car_controller.get_speed() >= 30:  # 속도가 30km/h 이상일 때
+            if car_controller.get_speed() >= AUTO_LOCK_SPEED:  # 속도가 자동잠금속도 이상일 때
                 # 차량의 문 잠금 상태를 확인하고 이미 잠겨있지 않은 문만 잠금
                 if car_controller.get_left_door_lock() != "LOCKED":
                     car_controller.lock_left_door()
@@ -85,7 +88,7 @@ def execute_command_callback(command, car_controller):
     # 왼쪽 문 잠금 해제
     elif command == "LEFT_DOOR_UNLOCK":
         if (not car_controller.get_lock_status() and 
-            car_controller.get_speed() < 30):  # 속도가 30km/h 미만일 때만 잠금 해제 허용
+            car_controller.get_speed() < AUTO_LOCK_SPEED):  # 속도가 자동잠금속도 미만일 때만 잠금 해제 허용
             car_controller.unlock_left_door()  # 왼쪽 문 잠금 해제
         
     elif command == "LEFT_DOOR_OPEN":
@@ -107,7 +110,7 @@ def execute_command_callback(command, car_controller):
     # 오른쪽 문 잠금 해제
     elif command == "RIGHT_DOOR_UNLOCK":
         if (not car_controller.get_lock_status() and 
-            car_controller.get_speed() < 30):  # 속도가 30km/h 미만일 때만 잠금 해제 허용
+            car_controller.get_speed() < AUTO_LOCK_SPEED):  # 속도가 자동잠금속도 미만일 때만 잠금 해제 허용
             car_controller.unlock_right_door()  # 오른쪽 문 잠금 해제
             
     elif command == "RIGHT_DOOR_OPEN":
@@ -188,18 +191,18 @@ class TestCarController(unittest.TestCase):
         self.assertFalse(self.car.trunk_status, "트렁크가 열리지 않았습니다.")
 
     def test_accelerate_lock_trigger(self):
-        # 엔진을 켜고 세 번 가속하여 속도가 30이 되도록 설정
+        # 엔진을 켜고 세 번 가속하여 속도가 자동 잠금 속도에 도달하도록 설정
         execute_command_callback("UNLOCK", self.controller)
         execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
 
-        # 속도가 30에 도달한 후 모든 문과 트렁크가 잠겼는지 확인
-        self.assertEqual(self.controller.get_speed(), 30, "차량 속도가 30km/h가 되지 않았습니다.")
-        self.assertEqual(self.car.left_door_lock, "LOCKED", "속도가 30km/h일 때 왼쪽 문이 잠기지 않았습니다.")
-        self.assertEqual(self.car.right_door_lock, "LOCKED", "속도가 30km/h일 때 오른쪽 문이 잠기지 않았습니다.")
-        self.assertTrue(self.car.trunk_status, "속도가 30km/h일 때 트렁크가 닫히지 않았습니다.")
+        # 속도가 자동 잠금 속도에 도달한 후 모든 문과 트렁크가 잠겼는지 확인
+        self.assertEqual(self.controller.get_speed(), AUTO_LOCK_SPEED, f"차량 속도가 {AUTO_LOCK_SPEED}km/h가 되지 않았습니다.")
+        self.assertEqual(self.car.left_door_lock, "LOCKED", f"속도가 {AUTO_LOCK_SPEED}km/h일 때 왼쪽 문이 잠기지 않았습니다.")
+        self.assertEqual(self.car.right_door_lock, "LOCKED", f"속도가 {AUTO_LOCK_SPEED}km/h일 때 오른쪽 문이 잠기지 않았습니다.")
+        self.assertTrue(self.car.trunk_status, f"속도가 {AUTO_LOCK_SPEED}km/h일 때 트렁크가 닫히지 않았습니다.")
 
     def test_lock_while_door_opened(self): 
         # 일부 문이 열린 상태에서 차량 전체 잠금 작동 여부 확인(작동하면 안됨)
@@ -245,24 +248,24 @@ class TestCarController(unittest.TestCase):
         self.assertFalse(exceed_speed_limit(self.controller), "0km/h 인데도 과속 경고가 발생했습니다.")
         for _ in range(15):
             execute_command_callback("ACCELERATE", self.controller)
-        # 속도가 120km/h 이상일때 과속 경고가 발생했는지 확인
-        self.assertTrue(exceed_speed_limit(self.controller), "120km/h 초과 시 과속 경고가 발생하지 않았습니다.")
+        # 속도가 과속기준속도 이상일때 과속 경고가 발생했는지 확인
+        self.assertTrue(exceed_speed_limit(self.controller), f"속도 {SPEED_LIMIT}km/h 초과 시 과속 경고가 발생하지 않았습니다.")
         
-    def test_locks_not_disengage_above_30kmh(self):
+    def test_locks_not_disengage_above_auto_lock_speed(self):
         # 엔진을 켜고 가속하여 차량을 주행 상태로 만듬
         execute_command_callback("UNLOCK", self.controller)
         execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)  # 첫 번째 가속
         execute_command_callback("ACCELERATE", self.controller)  # 두 번째 가속
-        execute_command_callback("ACCELERATE", self.controller)  # 세 번째 가속, 속도는 30km/h 이상
+        execute_command_callback("ACCELERATE", self.controller)  # 세 번째 가속, 속도는 자동잠금속도 이상
 
-        # 차량 속도가 30km/h 이상일 때 문 잠금 해제 시도
+        # 차량 속도가 자동잠금속도 이상일 때 문 잠금 해제 시도
         execute_command_callback("LEFT_DOOR_UNLOCK", self.controller)
         execute_command_callback("RIGHT_DOOR_UNLOCK", self.controller)
         
         # 잠금 해제가 되지 않아야 함
-        self.assertEqual(self.car.left_door_lock, "LOCKED", "속도 30km/h 이상에서 왼쪽 문이 잠금 해제되었습니다.")
-        self.assertEqual(self.car.right_door_lock, "LOCKED", "속도 30km/h 이상에서 오른쪽 문이 잠금 해제되었습니다.")
+        self.assertEqual(self.car.left_door_lock, "LOCKED", f"속도 {AUTO_LOCK_SPEED}km/h 이상에서 왼쪽 문이 잠금 해제되었습니다.")
+        self.assertEqual(self.car.right_door_lock, "LOCKED", f"속도 {AUTO_LOCK_SPEED}km/h 이상에서 오른쪽 문이 잠금 해제되었습니다.")
         
     # 1203 TDD 개발 김준혁
     #1.BRAKE ENGINE_BTN
