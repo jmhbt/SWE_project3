@@ -4,66 +4,6 @@ from car import Car
 from car_controller import CarController
 from gui import CarSimulatorGUI
 
-"""
-[테스트 담당]
-
-주요 변경사항: 
-
-1.
-일단 lock_vehicle(), unlock_vehicle() 에서 트렁크 열고/닫기를 빼고
-SOS에 open trunk를 따로 추가했습니다. 
-생각해보니 차량 전체 잠금 상태와 트렁크 개폐 여부는 별개로 관리해야 할 것 같아요.
-
-2.
-command == "LOCK" 일 때, 모든 문이 닫혀 있을 때 잠금 가능하도록 조건 추가하였습니다.
-
-3. 
-주행중일 때 트렁크를 열 수 없도록 수정하였습니다.
-
-4.
-관련하여 요구사항 2.2.2, 2.2.6, 3.2.1, 3.2.7에 해당 부분 수정하였습니다.
-
-5. 2,3 번에 대한 테스트 케이스 추가하였습니다.
-
-6. 
-command == "LEFT_DOOR_OPEN", "RIGHT_DOOR_OPEN" 일 때
-not car_controller.get_right_door_lock() -> car_controller.get_right_door_lock() == "UNLOCKED"로 수정하였습니다.
-문 잠금 상태가 boolean이 아니라 문자열로 관리되고 있어서 수정하였습니다.
-
-7.
-car의 트렁크 상태가 문자열이 아니라 boolean으로 관리되고 있어서
-command == "TRUNK_CLOSE" 일 때
-조건 중 car_controller.get_trunk_status() == "OPEN" -> not car_controller.get_trunk_status()로 수정하였습니다.
-
-8.
-문이나 트렁크가 열려있는 채로 가속 페달을 밟을시(ACCELERATE) 속도는 올라가지만 경고 메시지를 출력하도록 함수를 하나 만들고 (warn_drive_while_open())
-command == "ACCELERATE" 부분을 문이나 트렁크가 하나라도 열려 있으면 경고문을 출력하도록 수정했습니다.
-그리고 이와 관련해서 테스트 케이스를 작성했습니다.
-
-9.주행 도중에 엔진이 꺼지지 않는지를 확인하는 테스트 케이스를 작성했습니다.
-"""
-#추가로할거1113
-# a.일정 주행속도 넘어가면 과속경고음 울리는 기능 추가해야함
-# 요구사항 문서에도 추가해야함
-# 구체적으로 속도 얼마 넘으면 울리게 할지, 경고음은 한번 울릴지 속도 넘긴 상태면 계속 울릴지 결정하기 - 일단 계속 울리는 것으로
-
-# b.차량 속도가 30넘어서 엑셀 밟을 때마다 매번 잠금을 계속 하는데 한번만 해도 되는 문제 해결하기 - 완
-# ~~생각해본 해결법들~~
-# 1.차량 문들이 다 잠겨있는지 확인하는 함수 만들어서 이걸 엑셀레이터 조건문에 넣기 
-
-# c.차량 주행중에 문열면 안열리게 코드 바꾸고 확인하는 테스트케이스(테스트함수)도 추가로 정의 - 잠금장치가 해제 안되는 것으로
-
-# d.다 만들었으면 inspection 문서에 수정한거 추가한거 작성 !!!!!!!!!!!!!!!!!!!!!!!!!!!하하하하하
-
-
-
-
-
-# #추가로만든거
-# lock_door(car_controller):
-# unlock_door(car_controller): 함수 만듦
-
-
 # 경고 메시지를 출력하는 함수
 def warn_speed_limit():
     global speedtest
@@ -182,10 +122,11 @@ def execute_command_callback(command, car_controller):
         car_controller.open_left_door()
         car_controller.open_right_door()  
         car_controller.open_trunk()
+        
 
-    # elif command == "SAFE":
-    #     if car_controller.get_speed() > 0:  # 차량이 주행 중일 때
-    #         warn_engine_running()  # 사용자에게 경고 메시지 --불필요한 커맨드, 삭제! 1113김준혁--
+def execute_dual_command_callback(command1, command2, car_controller):
+    print("hello world!") 
+
 
 # 차량 전장장치 잠금 관련 함수
 def lock_vehicle(car_controller):
