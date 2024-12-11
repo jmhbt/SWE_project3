@@ -15,6 +15,11 @@ def exceed_speed_limit(car_controller):
 
 # execute_command를 제어하는 콜백 함수
 def execute_command_callback(command, car_controller):
+    # dual command 처리 (공백이 있는 경우)
+    if isinstance(command, str) and ' ' in command:
+        command1, command2 = command.split()
+        execute_dual_command_callback(command1, command2, car_controller)
+        return
     # 주행 중 엔진을 끌 수 없다는 경고 메시지 함수
     def warn_engine_running():
         print("주행 중입니다. 엔진을 끌 수 없습니다.")  # 사용자에게 경고 메시지
