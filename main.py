@@ -20,11 +20,16 @@ def execute_command_callback(command, car_controller):
     def warn_drive_while_open():
         print("문이 열려 있는 채로 주행중입니다. 문을 닫으십시오.") #사용자에게 경고 메시지
     
-    if command == "ENGINE_BTN":
-        if car_controller.get_speed() == 0 and not car_controller.get_lock_status():
-            car_controller.toggle_engine()  # 시동 ON
-        elif car_controller.get_speed() > 0:
-            warn_engine_running()  # 사용자에게 경고 메시지
+    if command == "ENGINE_BTN": # 기존 시동 ON/OFF 버튼이었으나 이제 OFF 용도로만 사용
+        #분기 1: 엔진ON 시도-엔진이 꺼져있는 상태에서 "ENGINE_BTN" 누름
+        if not car_controller.get_engine_status():
+            print("브레이크를 누른 상태에서 엔진버튼을 눌러야 합니다")
+        #분기 2: 엔진OFF 시도-엔진이 켜져있는 상태에서 "ENGINE_BTN" 누름
+        else:
+            if car_controller.get_speed() == 0 and not car_controller.get_lock_status():
+                car_controller.toggle_engine()  # 시동 OFF
+            elif car_controller.get_speed() > 0:
+                warn_engine_running()  # 사용자에게 경고 메시지
 
 
     elif command == "ACCELERATE":
