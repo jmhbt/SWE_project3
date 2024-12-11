@@ -168,7 +168,7 @@ class TestCarController(unittest.TestCase):
     def test_SOS(self):
         # SOS 명령을 실행하고 상태 확인
         execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
@@ -180,7 +180,7 @@ class TestCarController(unittest.TestCase):
     def test_accelerate_lock_trigger(self):
         # 엔진을 켜고 세 번 가속하여 속도가 30이 되도록 설정
         execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
@@ -202,7 +202,7 @@ class TestCarController(unittest.TestCase):
     def test_trunk_open_during_drive(self): # 현재 실패
         # 주행 중 트렁크 열기 시도
         execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("TRUNK_OPEN", self.controller)
         # 트렁크가 열리지 않아야 함
@@ -211,7 +211,7 @@ class TestCarController(unittest.TestCase):
     #문이 열린 상태에서 차가 출발하면 경고 메시지가 출력되는지 확인
     def test_drive_while_door_open(self):
         execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("LEFT_DOOR_OPEN", self.controller)
         #문이 열린 채로 가속 시도
         execute_command_callback("ACCELERATE", self.controller)
@@ -221,12 +221,38 @@ class TestCarController(unittest.TestCase):
     #주행 중에는 엔진이 꺼지지 않는지 확인
     def test_engine_not_turnoff_while_driving(self):
         execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         #주행 중에 엔진 끄는걸 시도
         execute_command_callback("ENGINE_BTN", self.controller)
         self.assertTrue(self.car.engine_on, "주행 중에 엔진이 꺼졌습니다.")
+        
+    def test_speed_warning(self):        
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        # 속도가 0km/h 일때 과속 경고가 발생했는지 확인
+        self.assertFalse(exceed_speed_limit(self.controller), "0km/h 인데도 과속 경고가 발생했습니다.")
+        for _ in range(15):
+            execute_command_callback("ACCELERATE", self.controller)
+        # 속도가 120km/h 이상일때 과속 경고가 발생했는지 확인
+        self.assertTrue(exceed_speed_limit(self.controller), "120km/h 초과 시 과속 경고가 발생하지 않았습니다.")
+        
+    def test_locks_not_disengage_above_30kmh(self):
+        # 엔진을 켜고 가속하여 차량을 주행 상태로 만듬
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        execute_command_callback("ACCELERATE", self.controller)  # 첫 번째 가속
+        execute_command_callback("ACCELERATE", self.controller)  # 두 번째 가속
+        execute_command_callback("ACCELERATE", self.controller)  # 세 번째 가속, 속도는 30km/h 이상
+
+        # 차량 속도가 30km/h 이상일 때 문 잠금 해제 시도
+        execute_command_callback("LEFT_DOOR_UNLOCK", self.controller)
+        execute_command_callback("RIGHT_DOOR_UNLOCK", self.controller)
+        
+        # 잠금 해제가 되지 않아야 함
+        self.assertEqual(self.car.left_door_lock, "LOCKED", "속도 30km/h 이상에서 왼쪽 문이 잠금 해제되었습니다.")
+        self.assertEqual(self.car.right_door_lock, "LOCKED", "속도 30km/h 이상에서 오른쪽 문이 잠금 해제되었습니다.")
         
     # 1203 TDD 개발 김준혁
     #1.BRAKE ENGINE_BTN
@@ -254,6 +280,28 @@ class TestCarController(unittest.TestCase):
         execute_command_callback("BRAKE",self.controller)
         execute_command_callback("ENGINE_BTN",self.controller)
         self.assertFalse(self.car.engine_on, "test4 fail: 잘못된 접근에도 엔진이 켜졌습니다.")
+        
+    #5."ACCELERATE","ACCELERATE"
+    def test_equal_dual_command(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        execute_dual_command_callback("ACCELERATE","ACCELERATE",self.controller)
+        execute_dual_command_callback("ACCELERATE","ACCELERATE",self.controller)
+        execute_dual_command_callback("ACCELERATE","ACCELERATE",self.controller)
+        execute_dual_command_callback("ACCELERATE","ACCELERATE",self.controller)
+        self.assertEqual(self.controller.get_speed(), 40, "차량 속도가 40km/h가 되지 않았습니다.")
+    
+    #6."ACCELERATE","BRAKE"
+    def test_anthor_dual_command(self):
+        print("test6")
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        execute_command_callback("ACCELERATE", self.controller)  #가속
+        execute_dual_command_callback("ACCELERATE","BRAKE",self.controller)#가속하고 브레이크
+        execute_dual_command_callback("ACCELERATE","BRAKE",self.controller)#가속하고 브레이크
+        execute_dual_command_callback("ACCELERATE","BRAKE",self.controller)#가속하고 브레이크
+        print(self.controller.get_speed())
+        self.assertEqual(self.controller.get_speed(), 10, "차량 속도가 10km/h가 되지 않았습니다.")
         
     def test_speed_warning(self):
         global speedtest
