@@ -280,6 +280,33 @@ class TestCarController(unittest.TestCase):
         execute_command_callback("ENGINE_BTN", self.controller)
         self.assertTrue(self.car.engine_on, "주행 중에 엔진이 꺼졌습니다.")
         
+    # 1203 TDD 개발 김준혁
+    #1.BRAKE ENGINE_BTN
+    def test_BRAKE_and_ENGINE_BTN(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        self.assertTrue(self.car.engine_on, "test1 fail: 엔진이 켜지지 않았습니다.")
+        
+    #2.ENGINE_BTN BRAKE 
+    def test_ENGINE_BTN_and_BRAKE(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("ENGINE_BTN","BRAKE",self.controller)
+        self.assertFalse(self.car.engine_on, "test2 fail: 잘못된 접근에도 엔진이 켜졌습니다.")
+        
+    #3.ENGINE_BTN
+    def test_ENGINE_BTN(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("ENGINE_BTN",self.controller)
+        self.assertFalse(self.car.engine_on, "test3 fail: 잘못된 접근에도 엔진이 켜졌습니다.")
+    
+    #4.BRAKE
+    #  ENGINE_BTN
+    def test_BRAKE_wait_ENGINE_BTN(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("BRAKE",self.controller)
+        execute_command_callback("ENGINE_BTN",self.controller)
+        self.assertFalse(self.car.engine_on, "test4 fail: 잘못된 접근에도 엔진이 켜졌습니다.")
+        
     def test_speed_warning(self):
         global speedtest
         speedtest = False  # 초기화
