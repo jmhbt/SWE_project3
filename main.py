@@ -131,7 +131,8 @@ def execute_command_callback(command, car_controller):
 
 def execute_dual_command_callback(command1, command2, car_controller):
     if command1=="BRAKE" and command2=="ENGINE_BTN":
-        execute_command_callback("ENGINE_BTN",car_controller)
+        if car_controller.get_speed() == 0 and not car_controller.get_lock_status():
+            car_controller.toggle_engine()  # 시동 ON
 
 
 # 차량 전장장치 잠금 관련 함수
