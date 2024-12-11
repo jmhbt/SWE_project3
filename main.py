@@ -125,7 +125,8 @@ def execute_command_callback(command, car_controller):
         
 
 def execute_dual_command_callback(command1, command2, car_controller):
-    print("hello world!") 
+    if command1=="BRAKE" and command2=="ENGINE_BTN":
+        execute_command_callback("ENGINE_BTN",car_controller)
 
 
 # 차량 전장장치 잠금 관련 함수
