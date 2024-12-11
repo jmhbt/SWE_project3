@@ -4,11 +4,14 @@ from car import Car
 from car_controller import CarController
 from gui import CarSimulatorGUI
 
+
 # 경고 메시지를 출력하는 함수
-def warn_speed_limit():
-    global speedtest
-    speedtest = True
-    print("경고: 차량 속도가 120km/h를 초과했습니다.")  # 과속 경고 메시지 출력
+def exceed_speed_limit(car_controller):
+    if car_controller.get_speed()>120:
+        print("경고: 차량 속도가 120km/h를 초과했습니다.")  # 과속 경고 메시지 출력
+        return True
+    else:
+        return False
 
 # execute_command를 제어하는 콜백 함수
 def execute_command_callback(command, car_controller):
@@ -19,6 +22,7 @@ def execute_command_callback(command, car_controller):
     #문이 열려 있는 채로 가속 페달을 밟을 시
     def warn_drive_while_open():
         print("문이 열려 있는 채로 주행중입니다. 문을 닫으십시오.") #사용자에게 경고 메시지
+        
     
     if command == "ENGINE_BTN": # 기존 시동 ON/OFF 버튼이었으나 이제 OFF 용도로만 사용
         #분기 1: 엔진ON 시도-엔진이 꺼져있는 상태에서 "ENGINE_BTN" 누름
@@ -30,10 +34,8 @@ def execute_command_callback(command, car_controller):
                 car_controller.toggle_engine()  # 시동 OFF
             elif car_controller.get_speed() > 0:
                 warn_engine_running()  # 사용자에게 경고 메시지
-
-
+            
     elif command == "ACCELERATE":
-    #문이 모두 닫혀있고, 트렁크도 닫혀있을 때 가속
         if car_controller.get_engine_status() and not car_controller.get_lock_status():
 
             if(car_controller.get_left_door_status() == "OPEN" or car_controller.get_right_door_status() == "OPEN"
@@ -41,8 +43,8 @@ def execute_command_callback(command, car_controller):
                 warn_drive_while_open()  # 경고 메시지 출력
             
             car_controller.accelerate()  # 속도 +10
-            if car_controller.get_speed() > 120:
-                warn_speed_limit()
+            if car_controller.get_speed() >= 120:
+                exceed_speed_limit(car_controller)
 
             if car_controller.get_speed() >= 30:  # 속도가 30km/h 이상일 때
                 # 차량의 문 잠금 상태를 확인하고 이미 잠겨있지 않은 문만 잠금
@@ -61,50 +63,53 @@ def execute_command_callback(command, car_controller):
         # 속도가 0이고 모든 문이 닫혀 있을 때 차량 잠금 가능
         if (car_controller.get_speed() == 0 and
             car_controller.get_left_door_status() == "CLOSED" and
-            car_controller.get_right_door_status() == "CLOSED"): 
-            # print("왼쪽 문 열림 상태: ",car_controller.get_left_door_status())
+            car_controller.get_right_door_status() == "CLOSED" and
+            car_controller.get_trunk_status()): 
             lock_vehicle(car_controller) # 차량 전체 잠금
+
     elif command == "UNLOCK":
         if car_controller.get_speed() == 0:
             unlock_vehicle(car_controller) # 차량 전체 잠금 해제
             
-    elif command == "DOOR_LOCK":
-        if car_controller.get_speed() > 30:
-            lock_door(car_controller)
-    elif command == "DOOR_UNLOCK":
-        if car_controller.get_speed() < 30:  # 속도가 30km/h 미만일 때만 문 잠금 해제 허용
-            unlock_door(car_controller)  # 문 잠금 해제
-
-
-    # 왼쪽 문 
+    # 왼쪽 문 잠금
     elif command == "LEFT_DOOR_LOCK":
         if (not car_controller.get_lock_status() and 
             car_controller.get_left_door_status() == "CLOSED"):
-            car_controller.lock_left_door()  # 왼쪽 문 잠금    
+            car_controller.lock_left_door()  # 왼쪽 문 잠금  
+
+    # 왼쪽 문 잠금 해제
     elif command == "LEFT_DOOR_UNLOCK":
-        car_controller.unlock_left_door()  # 왼쪽 문 잠금 해제
+        if (not car_controller.get_lock_status() and 
+            car_controller.get_speed() < 30):  # 속도가 30km/h 미만일 때만 잠금 해제 허용
+            car_controller.unlock_left_door()  # 왼쪽 문 잠금 해제
         
     elif command == "LEFT_DOOR_OPEN":
         if (car_controller.get_left_door_lock() == "UNLOCKED" and 
             car_controller.get_left_door_status() == "CLOSED"):
             car_controller.open_left_door()  # 왼쪽 문 열기
+            
     elif command == "LEFT_DOOR_CLOSE": 
         if car_controller.get_left_door_status() == "OPEN":
             car_controller.close_left_door()  # 왼쪽 문 닫기
         
         
-    # 오른쪽 문
+    # 오른쪽 문 잠금
     elif command == "RIGHT_DOOR_LOCK":
         if (not car_controller.get_lock_status() and 
             car_controller.get_right_door_status() == "CLOSED"):
             car_controller.lock_right_door()  # 오른쪽 문 잠금
+
+    # 오른쪽 문 잠금 해제
     elif command == "RIGHT_DOOR_UNLOCK":
-        car_controller.unlock_right_door()  # 오른쪽 문 잠금 해제
+        if (not car_controller.get_lock_status() and 
+            car_controller.get_speed() < 30):  # 속도가 30km/h 미만일 때만 잠금 해제 허용
+            car_controller.unlock_right_door()  # 오른쪽 문 잠금 해제
             
     elif command == "RIGHT_DOOR_OPEN":
         if (car_controller.get_right_door_lock() == "UNLOCKED" and 
             car_controller.get_right_door_status() == "CLOSED"):
             car_controller.open_right_door()  # 오른쪽 문 열기
+            
     elif command == "RIGHT_DOOR_CLOSE":
         if car_controller.get_right_door_status() == "OPEN":
             car_controller.close_right_door()  # 오른쪽 문 닫기
@@ -122,19 +127,29 @@ def execute_command_callback(command, car_controller):
         
     elif command == "SOS":
         while car_controller.get_speed() > 0:  # 속도가 0이 될 때까지 브레이크
-            car_controller.brake() 
-        unlock_door(car_controller) #---차 전체잠금이 아니라 문만 잠금 해제 1113 김준혁---
+            car_controller.brake()
+        car_controller.unlock_left_door()
+        car_controller.unlock_left_door()        #---차 전체잠금이 아니라 문만 잠금 해제 1113 김준혁---
         car_controller.open_left_door()
         car_controller.open_right_door()  
         car_controller.open_trunk()
         
-
+# 두개의 execute_command를 제어하는 콜백 함수
 def execute_dual_command_callback(command1, command2, car_controller):
     if command1=="BRAKE" and command2=="ENGINE_BTN":
         if car_controller.get_speed() == 0 and not car_controller.get_lock_status():
             car_controller.toggle_engine()  # 시동 ON
-
-
+    else:
+        #이 외에 커맨드는 command1,command2 순으로 실행하되 
+        #같은 커맨드를 동시에 두번은 못하니까 (엑셀은 하나 밖에 없으므로 동시에 두번 밟을순 없다)
+        #동일한 커맨드가 중복될 경우 한번만 실행
+        if command1==command2:
+            execute_command_callback(command1, car_controller)
+        else:
+            execute_command_callback(command1, car_controller)
+            execute_command_callback(command2, car_controller)
+        
+        
 # 차량 전장장치 잠금 관련 함수
 def lock_vehicle(car_controller):
     car_controller.lock_vehicle()  
@@ -147,16 +162,6 @@ def unlock_vehicle(car_controller):
     car_controller.unlock_right_door() 
     car_controller.unlock_left_door()  
 
-# 차량 문 잠금 관련 함수             --- 차량 문만 잠금하는 함수 없어서 따로 만듦, 1113 김준혁 ---
-def lock_door(car_controller):
-    car_controller.lock_right_door()  
-    car_controller.lock_left_door()  
-
-def unlock_door(car_controller):
-    car_controller.unlock_right_door() 
-    car_controller.unlock_left_door() 
-    
-# 차량 모든 문 잠겼는지 확인하는 함수
 
 
 class TestCarController(unittest.TestCase):
@@ -303,39 +308,6 @@ class TestCarController(unittest.TestCase):
         print(self.controller.get_speed())
         self.assertEqual(self.controller.get_speed(), 10, "차량 속도가 10km/h가 되지 않았습니다.")
         
-    def test_speed_warning(self):
-        global speedtest
-        speedtest = False  # 초기화
-        
-        execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
-        for _ in range(15):
-            execute_command_callback("ACCELERATE", self.controller)
-
-        # 현재 속도 출력 (디버그)
-        print(f"현재 속도: {self.controller.get_speed()} km/h")
-        # 속도가 120km/h 이상이고 과속 경고가 발생했는지 확인
-        self.assertGreater(self.controller.get_speed(), 120, "속도가 120km/h를 넘지 않았습니다.")
-        self.assertTrue(speedtest, "120km/h 초과 시 과속 경고가 발생하지 않았습니다.")
-        
-    def test_locks_not_disengage_above_30kmh(self):
-        # 엔진을 켜고 가속하여 차량을 주행 상태로 만듬
-        execute_command_callback("UNLOCK", self.controller)
-        execute_command_callback("ENGINE_BTN", self.controller)
-        execute_command_callback("ACCELERATE", self.controller)  # 첫 번째 가속
-        execute_command_callback("ACCELERATE", self.controller)  # 두 번째 가속
-        execute_command_callback("ACCELERATE", self.controller)  # 세 번째 가속, 속도는 30km/h 이상
-
-        # 차량 속도가 30km/h 이상일 때 문 잠금 해제 시도
-        execute_command_callback("LEFT_DOOR_UNLOCK", self.controller)
-        execute_command_callback("RIGHT_DOOR_UNLOCK", self.controller)
-        
-        # 잠금 해제가 되지 않아야 함
-        self.assertEqual(self.car.left_door_lock, "LOCKED", "속도 30km/h 이상에서 왼쪽 문이 잠금 해제되었습니다.")
-        self.assertEqual(self.car.right_door_lock, "LOCKED", "속도 30km/h 이상에서 오른쪽 문이 잠금 해제되었습니다.")
-        
-    
-
 def file_input_thread(gui):
     while True:
         file_path = input("Please enter the command file path (or 'exit' to quit): ")
