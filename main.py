@@ -171,12 +171,75 @@ def unlock_vehicle(car_controller):
     car_controller.unlock_left_door()  
 
 
-
 class TestCarController(unittest.TestCase):
     
     def setUp(self):
         self.car = Car()
         self.controller = CarController(self.car)
+
+    #차량 전체 잠금 테스트
+    def test_car_lock_and_unlock(self):
+        # 잠금 해제 테스트
+        execute_command_callback("UNLOCK", self.controller)
+        self.assertFalse(self.car.lock, "차량 전체 잠금 해제가 작동하지 않았습니다.")
+        
+        # 잠금 테스트 
+        execute_command_callback("LOCK", self.controller)
+        self.assertTrue(self.car.lock, "차량 전체 잠금이 작동하지 않았습니다.")
+        
+    #기본 문잠금/잠금해제 테스트
+    def test_door_lock_and_unlock(self):
+        execute_command_callback("UNLOCK", self.controller)
+        
+        # 잠금 테스트
+        execute_command_callback("LEFT_DOOR_LOCK", self.controller)
+        self.assertEqual(self.car.left_door_lock, "LOCKED", "문이 잠기지 않았습니다.")
+        
+        # 잠금해제 테스트
+        execute_command_callback("LEFT_DOOR_UNLOCK", self.controller)
+        self.assertEqual(self.car.left_door_lock, "UNLOCKED", "문이 잠금 해제되지 않았습니다.")
+
+    #기본 문열기/닫기 테스트
+    def test_door_open_close(self):
+        # 문 닫기 테스트
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("LEFT_DOOR_CLOSE", self.controller)
+        self.assertEqual(self.car.left_door_status, "CLOSED", "문이 닫히지 않았습니다.")
+        
+        # 문 열기 테스트
+        execute_command_callback("LEFT_DOOR_OPEN", self.controller)
+        self.assertEqual(self.car.left_door_status, "OPEN", "문이 열리지 않았습니다.")
+    
+    #기본 시동 테스트
+    def test_engine_on(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        self.assertTrue(self.car.engine_on, "엔진이 켜지지 않았습니다.")    
+    
+    #기본 가속/브레이크 테스트
+    def test_accelerate_and_brake(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        
+        # 가속 테스트
+        execute_command_callback("ACCELERATE", self.controller)
+        self.assertEqual(self.controller.get_speed(), 10, "차량 속도가 10km/h가 되지 않았습니다.")
+        
+        # 브레이크 테스트
+        execute_command_callback("BRAKE", self.controller)
+        self.assertEqual(self.controller.get_speed(), 0, "차량이 정지되지 않았습니다.")
+        
+    #기본 트렁크 열기/닫기 테스트
+    def test_trunk_open_close(self):
+        execute_command_callback("UNLOCK", self.controller)
+        
+        # 트렁크 열기 테스트
+        execute_command_callback("TRUNK_OPEN", self.controller)
+        self.assertFalse(self.car.trunk_status, "트렁크가 열리지 않았습니다.")
+        
+        # 트렁크 닫기 테스트
+        execute_command_callback("TRUNK_CLOSE", self.controller)
+        self.assertTrue(self.car.trunk_status, "트렁크가 닫히지 않았습니다.")
 
     def test_SOS(self):
         # SOS 명령을 실행하고 상태 확인
