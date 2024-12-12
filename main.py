@@ -137,7 +137,7 @@ def execute_command_callback(command, car_controller):
         while car_controller.get_speed() > 0:  # 속도가 0이 될 때까지 브레이크
             car_controller.brake()
         car_controller.unlock_left_door()
-        car_controller.unlock_left_door()        #---차 전체잠금이 아니라 문만 잠금 해제 1113 김준혁---
+        car_controller.unlock_right_door()        #---차 전체잠금이 아니라 문만 잠금 해제 1113 김준혁--- #--unlock_left_door()가 두개고, unlock_right_door()가 없어 수정 최한주--
         car_controller.open_left_door()
         car_controller.open_right_door()  
         car_controller.open_trunk()
