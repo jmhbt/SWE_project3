@@ -261,15 +261,17 @@ class TestCarController(unittest.TestCase):
         execute_command_callback("TRUNK_CLOSE", self.controller)
         self.assertTrue(self.car.trunk_status, "트렁크가 닫히지 않았습니다.")
 
-    def test_sos(self):
+    def test_SOS(self):
         # SOS 명령을 실행하고 상태 확인
+        execute_command_callback("UNLOCK", self.controller)
         execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("ACCELERATE", self.controller)
         execute_command_callback("SOS", self.controller) #여기서 속도가 0되고, 문이랑 트렁크 열린다
         self.assertEqual(self.controller.get_speed(), 0, "차량이 정지되지 않았습니다.")
-        self.assertFalse(self.car.lock, "모든 문이 잠금 해제되지 않았습니다.")
+        self.assertEqual(self.car.left_door_lock, "UNLOCKED", "왼쪽문이 잠금 해제되지 않았습니다.") -- 차량 전체 잠금을 확인하는 것이 아닌 왼쪽, 오른쪽 문을 각각 확인 --
+        self.assertEqual(self.car.right_door_lock, "UNLOCKED", "오른쪽문이 잠금 해제되지 않았습니다.")
         self.assertFalse(self.car.trunk_status, "트렁크가 열리지 않았습니다.")
 
     def test_accelerate_lock_trigger(self):
