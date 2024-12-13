@@ -302,12 +302,29 @@ class TestCarController(unittest.TestCase):
 
     #문이 열린 상태에서 차가 출발하면 경고 메시지가 출력되는지 확인
     def test_drive_while_door_open(self):
-        execute_dual_command_callback("BRAKE","ENGINE_BTN",self.controller)
+        # 차량 잠금 해제 및 시동 켜기
+        execute_command_callback("UNLOCK", self.controller)
+        execute_dual_command_callback("BRAKE", "ENGINE_BTN", self.controller)
+    
+        # 1. 왼쪽 문 열기 후 가속 시도
         execute_command_callback("LEFT_DOOR_OPEN", self.controller)
-        #문이 열린 채로 가속 시도
-        execute_command_callback("ACCELERATE", self.controller)
-        #가속은 되지만 경고 메시지가 나오는 것을 확인
-        self.assertGreater(self.controller.get_speed(), 0, "자동차가 가속 되지 않았습니다.")
+        self.assertEqual(self.controller.get_left_door_status(), "OPEN", "왼쪽 문이 열려 있지 않습니다.")  # 검증: 문 상태
+        execute_command_callback("ACCELERATE", self.controller)  # 가속 시도
+        self.assertGreater(self.controller.get_speed(), 0, "왼쪽 문이 열린 상태에서 가속되지 않았습니다.")  # 검증: 속도
+    
+        # 2. 오른쪽 문 열기 후 가속 시도
+        execute_command_callback("LEFT_DOOR_CLOSE", self.controller)  # 왼쪽 문 닫기
+        execute_command_callback("RIGHT_DOOR_OPEN", self.controller)  # 오른쪽 문 열기
+        self.assertEqual(self.controller.get_right_door_status(), "OPEN", "오른쪽 문이 열려 있지 않습니다.")  # 검증: 문 상태
+        execute_command_callback("ACCELERATE", self.controller)  # 가속 시도
+        self.assertGreater(self.controller.get_speed(), 0, "오른쪽 문이 열린 상태에서 가속되지 않았습니다.")  # 검증: 속도
+
+        # 3. 양쪽 문 열기 후 가속 시도
+        execute_command_callback("LEFT_DOOR_OPEN", self.controller)  # 왼쪽 문 열기
+        self.assertEqual(self.controller.get_left_door_status(), "OPEN", "왼쪽 문이 열려 있지 않습니다.")  # 검증: 문 상태
+        self.assertEqual(self.controller.get_right_door_status(), "OPEN", "오른쪽 문이 열려 있지 않습니다.")  # 검증: 문 상태
+        execute_command_callback("ACCELERATE", self.controller)  # 가속 시도
+        self.assertGreater(self.controller.get_speed(), 0, "양쪽 문이 열린 상태에서 가속되지 않았습니다.")  # 검증: 속도
 
     #주행 중에는 엔진이 꺼지지 않는지 확인
     def test_engine_not_turnoff_while_driving(self):
