@@ -137,9 +137,9 @@ def execute_command_callback(command, car_controller):
         while car_controller.get_speed() > 0:  # 속도가 0이 될 때까지 브레이크
             car_controller.brake()
         car_controller.unlock_left_door()
-        car_controller.unlock_left_door()        #---차 전체잠금이 아니라 문만 잠금 해제 1113 김준혁---
+        car_controller.unlock_right_door()        #---차 전체잠금이 아니라 문만 잠금 해제 1113 김준혁--- #--unlock_left_door()가 두개고, unlock_right_door()가 없어 수정 최한주--
         car_controller.open_left_door()
-        car_controller.open_right_door()  
+        car_controller.open_right_door()
         car_controller.open_trunk()
         
 # 두개의 execute_command를 제어하는 콜백 함수
@@ -189,31 +189,57 @@ class TestCarController(unittest.TestCase):
         execute_command_callback("UNLOCK", self.controller)
         self.assertFalse(self.car.lock, "차량 전체 잠금 해제가 작동하지 않았습니다.")
         
-    #문잠금 테스트    
-    def test_door_lock(self):
+    #왼쪽 문잠금 테스트    
+    def test_left_door_lock(self):
         execute_command_callback("UNLOCK", self.controller)
         execute_command_callback("LEFT_DOOR_LOCK", self.controller)
-        self.assertEqual(self.car.left_door_lock, "LOCKED", "문이 잠기지 않았습니다.")
+        self.assertEqual(self.car.left_door_lock, "LOCKED", "왼쪽 문이 잠기지 않았습니다.")
         
-    #문잠금해제 테스트
-    def test_door_unlock(self):
+    #오른쪽 문잠금 테스트    
+    def test_right_door_lock(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("RIGHT_DOOR_LOCK", self.controller)
+        self.assertEqual(self.car.right_door_lock, "LOCKED", "오른쪽 문이 잠기지 않았습니다.")
+        
+    #왼쪽 문잠금해제 테스트
+    def test_left_door_unlock(self):
         execute_command_callback("UNLOCK", self.controller)
         execute_command_callback("LEFT_DOOR_LOCK", self.controller)
         execute_command_callback("LEFT_DOOR_UNLOCK", self.controller)
-        self.assertEqual(self.car.left_door_lock, "UNLOCKED", "문이 잠금 해제되지 않았습니다.")
+        self.assertEqual(self.car.left_door_lock, "UNLOCKED", "왼쪽 문이 잠금 해제되지 않았습니다.")
+        
+    #오른쪽 문잠금해제 테스트
+    def test_right_door_unlock(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("RIGHT_DOOR_LOCK", self.controller)
+        execute_command_callback("RIGHT_DOOR_UNLOCK", self.controller)
+        self.assertEqual(self.car.right_door_lock, "UNLOCKED", "오른쪽 문이 잠금 해제되지 않았습니다.")
 
-    #문닫기 테스트
-    def test_door_close(self):
+    #왼쪽 문닫기 테스트
+    def test_left_door_close(self):
         execute_command_callback("UNLOCK", self.controller)
         execute_command_callback("LEFT_DOOR_OPEN", self.controller)
         execute_command_callback("LEFT_DOOR_CLOSE", self.controller)
-        self.assertEqual(self.car.left_door_status, "CLOSED", "문이 닫히지 않았습니다.")
+        self.assertEqual(self.car.left_door_status, "CLOSED", "왼쪽 문이 닫히지 않았습니다.")
         
-    #문열기 테스트
-    def test_door_open(self):
+    #오른쪽 문닫기 테스트
+    def test_right_door_close(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("RIGHT_DOOR_OPEN", self.controller)
+        execute_command_callback("RIGHT_DOOR_CLOSE", self.controller)
+        self.assertEqual(self.car.right_door_status, "CLOSED", "오른쪽 문이 닫히지 않았습니다.")
+        
+    #왼쪽 문열기 테스트
+    def test_left_door_open(self):
         execute_command_callback("UNLOCK", self.controller)
         execute_command_callback("LEFT_DOOR_OPEN", self.controller)
-        self.assertEqual(self.car.left_door_status, "OPEN", "문이 열리지 않았습니다.")
+        self.assertEqual(self.car.left_door_status, "OPEN", "왼쪽 문이 열리지 않았습니다.")
+        
+    #오른쪽 문열기 테스트
+    def test_right_door_open(self):
+        execute_command_callback("UNLOCK", self.controller)
+        execute_command_callback("RIGHT_DOOR_OPEN", self.controller)
+        self.assertEqual(self.car.right_door_status, "OPEN", "오른쪽 문이 열리지 않았습니다.")
     
     #시동 테스트
     def test_engine_on(self):
